@@ -2,7 +2,7 @@
 
 Here I will upload my progress on learning Django, following this [tutorial](https://docs.djangoproject.com/en/4.0/intro/tutorial01/) on a set schedule . I am using Windows 10, so all code written below is specifically windows-compatible
 
-## Installation
+### Installation
 
 Install [Python](https://python.org)
 
@@ -193,3 +193,74 @@ For using the python shell, you run
 py manage.py shell
 ```
 To use the GUI, you use the [django admin](https://docs.djangoproject.com/en/4.0/intro/tutorial02/#introducing-the-django-admin)
+
+## Week Three - Handling URLs, Views and Templates
+When we naviagate a website, we navigate the folders and files that the server allows us to see on the client-side. We can tell where we are based on the URL in our browser; something like "github.com/ib-bib" tells us that we navigated to the ib-bib 'directory' within GitHub.
+We handle showing patterns like these in our URLs files. The example below shows a specific pattern and a few general patterns to handle
+### polls/urls.py
+```python
+from django.urls import path
+from . import views
+
+app_name = 'polls'
+urlpatterns = [
+    path('', views.index, name='index'),
+    path('<int:question_id>/', views.detail, name='detail'),
+    path('<int:question_id>/results/', views.results, name='results'),
+    path('<int:question_id>/vote/', views.vote, name='vote'),
+]
+```
+Notice the use of 'int' there, that states that the url pattern will contain an integer which we will refer to as 'question_id'. This is very useful to be more specific in our approach to stating what are acceptable url patterns.
+
+The 'views' that are imported at the top, are the functions that allow us to respond to these url patterns in the browser. That is, what we show the client as a result of the url pattern being selected on their browser
+### polls/views.py
+```python
+from django.http import HttpResponse
+from .models import Question
+from django.shortcuts import render, get_object_or_404
+
+
+def index(request):
+    latest_questions_list = Question.objects.order_by('-pub_date')[:5]
+    context = {'latest_questions_list': latest_questions_list, }
+    return render(request, 'polls/index.html', context)
+
+
+def detail(request, question_id):
+    question = get_object_or_404(Question, pk=question_id)
+    return render(request, 'polls/detail.html', {'question': question})
+    
+
+def results(request, question_id):
+    response = "You're looking at the results of question %s."
+    return HttpResponse(response % question_id)
+
+
+def vote(request, question_id):
+    return HttpResponse("You're voting on question %s." % question_id)
+```
+We notice some functions have an 'HttpResponse' as a response to the URL request. This creates a very very simple bare-bones webpage that just contains simple text that is defined in the function. In other functions there is a 'render' function that is served as a response, which returns a legitimately designed webpage, that we can customize. Moreover, we can inject some back-end code into that webpage to make it behave a certain way or display certain things, in a manner informed by data on the back-end. Such a webpage is labelled a 'template' in this context, as it's an abstract representation of what 'will be' rendered and displayed on the webpage and it's not written in traditional HTML.
+
+Here is an example of such templates, notice the lines with curly braces and percentage signs
+### polls/templates/polls/detail.html
+```html
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Detail</title>
+	</head>
+	<body>
+		<h1>{{question.q_txt}}</h1>
+		<ul>
+			{% for choice in question.choice_set.all %} 
+            {% comment %} all is interpreted as a method call () {% endcomment %}
+			<li>{{choice.choice_txt}}</li>
+			{% endfor %}
+		</ul>
+	</body>
+</html>
+```
+We can notice the use of a for loop there, and a command to be executed at each iteration through the loop. This is more akin to programming than web design, and it allows us to abstractly (and dynamically) render however many ```<li>``` items as we need within that ```<ul>``` element. Moreover it's immediately informed by the back-end, rather than being fetched like through asynchronous javascript or something.
