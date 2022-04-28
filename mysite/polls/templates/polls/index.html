@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Index</title>
+	</head>
+	<body>
+		{% if latest_questions_list %}
+		<ul>
+			{% for question in latest_questions_list %}
+			<li>
+				<a href="{% url 'polls:detail' question.id %}"
+					>{{question.q_txt}}</a
+				>
+			</li>
+			{% endfor %}
+		</ul>
+		{% else %}
+		<p>There are no polls to view</p>
+		{% endif %}
+	</body>
+</html>
