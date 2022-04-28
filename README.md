@@ -194,7 +194,7 @@ py manage.py shell
 ```
 To use the GUI, you use the [django admin](https://docs.djangoproject.com/en/4.0/intro/tutorial02/#introducing-the-django-admin)
 
-## Week Three - Handling URLs, Views and Templates
+## Week Four - Handling URLs, Views and Templates
 When we naviagate a website, we navigate the folders and files that the server allows us to see on the client-side. We can tell where we are based on the URL in our browser; something like "github.com/ib-bib" tells us that we navigated to the ib-bib 'directory' within GitHub.
 We handle showing patterns like these in our URLs files. The example below shows a specific pattern and a few general patterns to handle
 ### polls/urls.py
