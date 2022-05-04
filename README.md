@@ -263,4 +263,110 @@ Here is an example of such templates, notice the lines with curly braces and per
 	</body>
 </html>
 ```
-We can notice the use of a for loop there, and a command to be executed at each iteration through the loop. This is more akin to programming than web design, and it allows us to abstractly (and dynamically) render however many ```<li>``` items as we need within that ```<ul>``` element. Moreover it's immediately informed by the back-end, rather than being fetched like through asynchronous javascript or something.
+We can notice the use of a for loop there, and a command to be executed at each iteration through the loop. This is more akin to programming than web design, and it allows us to abstractly (and dynamically) render however many ```<li>``` items as we need within that ```<ul>``` element. Moreover it's immediately informed by the back-end, rather than being fetched through something like asynchronous javascript.
+
+## Week Five - Django Forms and Generic Views
+Due to some experience with PHP in university courses, I was somewhat familiar with form handling. We have an html form with an ```action``` attribute, and the value of that attribute is the file that handles the form. Given that you're uploading data to the server via the form, you are making an HTTP POST request, to create new data in the database. This will look something like this in Django HTML
+```html
+<form action="{% url 'polls:vote' question.id %}" method="post">
+```
+An important thing to be aware of when handling data between front-end and back-end, is ways in which malcious intent could exploit this connection. 
+For example, when handling forms, the ```action``` attribute can be changed by a third-party to execute undesired functions. 
+This is called a "Cross Site Resource Forgery" attack, commonly referred to by the acronym 'CSRF'.
+A way to protect against this is to generate a secret token, that the server recognizes as unique to a user in a specific session dealing with the form template.
+After the user submits the form, another token will be produced. If the action attribute is changed, the second token will not match the previous token. That is how we recognize a CSRF attack. 
+To generate the token in Django, we simply write
+```html
+<form action="{% url 'polls:vote' question.id %}" method="post">
++	{% csrf_token %}
+```
+This csrf_token is a stand-in for something that would usually look something like
+```html
+<input type="hidden" name="CSRFToken" value="OWY4NmQwODE4ODRjN2Q2NTlhMmZlYWEwYzU1YWQwMTVhM2JmNGYxYjJiMGI4MjJjZDE1ZDZMGYwMGEwOA==">
+```
+
+Next, we have form validation. The most basic kind of error in a form is the submission of an empty form; i.e a POST request with no data at all.
+In this particular tutorial, the form we're handling here is composed of a radio button choice.
+### polls/templates/polls/detail.html
+```html
+<form action="{% url 'polls:vote' question.id %}" method="post">
+	{% csrf_token %}
+	<fieldset>
+		<legend><h1>{{ question.q_txt }}</h1></legend>
+		{% if error_message %}
+			<p><strong>{{ error_message }}</strong></p>
+		{% endif %}
+		{% for choice in question.choice_set.all %}
+			<input
+				type="radio"
+				name="choice"
+				id="choice{{ forloop.counter }}"
+				value="{{ choice.id }}"
+			/>
+			<label for="choice{{ forloop.counter }}">
+				{{ choice.choice_txt }}
+			</label>
+			<br />
+		{% endfor %}
+	</fieldset>
+	<input type="submit" value="Vote" />
+</form>
+```
+The ```name``` attribute is what allows us to identify the data/datum in our back-end.
+We then handle the potential empty form submission by using a ```try``` clause, that surrounds the data/datum.
+### polls/views.py
+```python
+def vote(request, question_id):
+    question = get_object_or_404(Question, pk=question_id)
+    try:
+        selected_choice = question.choice_set.get(pk=request.POST['choice'])
+    except (KeyError, Choice.DoesNotExist):
+        # ...
+```
+Similarly to the associative array ```$_POST[]``` in PHP, we have a python dictionary called ```POST[]``` in Django. 
+
+To minimize verbosity and redundancy in our views, we should opt to use class-based views (a.k.a [generic views](https://docs.djangoproject.com/en/4.0/topics/class-based-views/))
+We first have to change our url patterns, to utilize the class-based approach better. This approach allows us to operate at a higher level of abstraction
+### polls/urls.py
+```python
+urlpatterns = [
+    path('', views.IndexView.as_view(), name='index'),
+    path('<int:pk>/', views.DetailView.as_view(), name='detail'),
+    path('<int:pk>/results/', views.ResultsView.as_view(), name='results'),
+    path('<int:question_id>/vote/', views.vote, name='vote'),
+]
+```
+We previously had a specific 'question_id' variable here, but now we have a more general 'pk' or 'Primary Key' variable.
+The generic views won't have the variable pre-defined, but will be defined later on down the line. This is a very helpful level of abstraction.
+Now we need to change our actual views themseleves
+### polls/views.html
+```python
+from django.views import generic
+from .models import Choice, Question
+
+
+class IndexView(generic.ListView):
+    template_name = 'polls/index.html'
+    context_object_name = 'latest_questions_list'
+
+    def get_queryset(self):
+        return Question.objects.order_by('-pub_date')[:5]
+
+
+class DetailView(generic.DetailView):
+    model = Question
+    template_name = 'polls/detail.html'
+
+
+class ResultsView(generic.DetailView):
+    model = Question
+    template_name = 'polls/results.html'
+```
+If nothing, this just looks a lot cleaner and easier to digest. 
+The ```ListView``` and the ```DetailView``` classes do all the work under the hood here. 
+Instead of writing the python code ourselves, we just have the ```ListView``` generic view display a list of objects on a specific template. 
+We override the ```get_queryset(self)``` method here to restrict the number of objects displayed.
+The ```DetailView``` generic view expects a 'pk' argument, which is the main reason we pass 'pk' to the generic views in the urlpatterns.
+By default, the ```DetailView``` uses a template called ```<app name>/<model name>_detail.html```.
+The ```ListView``` uses ```<app name>/<model name>_list.html```.
+We override both of these by declaring a ```template_name variable``` in our code.
