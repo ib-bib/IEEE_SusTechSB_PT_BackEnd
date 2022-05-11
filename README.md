@@ -1,6 +1,6 @@
 # IEEE SusTech Student Branch - Project Team - Back End
 
-Here I will upload my progress on learning Django, following this [tutorial](https://docs.djangoproject.com/en/4.0/intro/tutorial01/) on a set schedule . I am using Windows 10, so all code written below is specifically windows-compatible
+Here I will upload my progress on learning Django, following [this tutorial](https://docs.djangoproject.com/en/4.0/intro/tutorial01/) on a set schedule . I am using Windows 10, so all code written below is specifically windows-compatible
 
 ### Installation
 
