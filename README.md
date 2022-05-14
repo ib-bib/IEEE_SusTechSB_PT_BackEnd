@@ -370,3 +370,84 @@ The ```DetailView``` generic view expects a 'pk' argument, which is the main rea
 By default, the ```DetailView``` uses a template called ```<app name>/<model name>_detail.html```.
 The ```ListView``` uses ```<app name>/<model name>_list.html```.
 We override both of these by declaring a ```template_name variable``` in our code.
+
+## Week Seven - Automated Tests
+Testing and debugging are really important skills to have, to ensure you don't have to suffer later on redoing various funcitonalities. 
+However, even sufficient debugging knowledge may not always save us. We still sometimes face unexpected complications at times; some bugs that sort of 'slip throught the cracks'. 
+To help us lessen the frequency of such bugs, we can create "automated tests" for our applications. These will be functions that exhibit certain behaviours we desire from our application.
+We create a test by defining the procedures it should follow to get to a result, and then compare that result with what we want the result to look like.
+Should the test pass, we will know there aren't any bugs for us to find regarding the specific feature we're testing. Should the test fail, we get our debugger hats on, and get to work.
+With django specifically, you have an existing ```tests.py``` file for any sub-application you create.
+### polls/tests.py
+```python
+from django.test import TestCase
+```
+To add automated tests, you create a class for whatever component or portion of your app you want to test. You then pass the ```TestCase``` as a parent, and define a function for any specific behaviour you wish to test. The function's name must have the word 'test' at the beginning of its header.
+Django automatically finds tests to carry out by looking for that string pattern at the start of any function within the ```tests.py``` file.
+Say we want to test out the details view in our polls application. We want it to be the case that for any poll that's published in te future, it would not appear to the client. That is, they get a ```404``` error. All polls published in the past however, should be visible.
+### polls/tests.py
+```python
+class QuestionDetailViewTests(TestCase):
+    def test_future_question(self):
+        future_question = create_question(q_txt='Future question.', days=5)
+        url = reverse('polls:detail', args=(future_question.id,))
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+
+    def test_past_question(self):
+        past_question = create_question(q_txt='Past question.', days=-5)
+        url = reverse('polls:detail', args=(past_question.id,))
+        response = self.client.get(url)
+        self.assertContains(response, past_question.q_txt)
+```
+Notice the ```self.assertEqual(x, y)``` and the ```self.assertContains(x, y)```. This is where we compare the test's result, with the result we have in mind.
+Now that we have written our automated tests, we run them by
+```bash
+py manage.py test [INSERT_APPLICATION_NAME]
+```
+Should any tests fail, you will see something like this in your terminal
+```bash
+Found 14 test(s).
+Creating test database for alias 'default'...
+System check identified no issues (0 silenced).
+..F.F.F...F...
+======================================================================
+FAIL: test_future_question (polls.tests.QuestionIndexViewTests)
+.
+.
+.
+----------------------------------------------------------------------
+Ran 14 tests in 0.354s
+
+FAILED (failures=4)
+Destroying test database for alias 'default'...
+```
+You'll notice that a temporary database is created at the start, and destroyed at the bottom. 
+This is to carry out any tests that require dealing with databases, and avoid cluttering your actual database with just testing data. 
+You can see how this is a lot more efficient than dealing with the shell to interact with your database and test out your code manually.
+The tutorial had two suggestions for tests to write yourself, and I made an attempt at both of them. I hope I've done them correctly, but if not, I will definitely find out along the way towards the end of the tutorial.
+```python
+class QuestionModelTests(TestCase):
+    def test_was_published_with_choice(self):
+        question = create_question('Test question with choice.', days=-5)
+        question.choice_set.create(choice_txt='Vote for this', votes=0)
+        self.assertIs(question.was_published(), True)
+
+    def test_was_published_with_no_choice(self):
+        question = create_question('Test question with no choice.', days=-5)
+        self.assertIs(question.was_published(), False)
+	
+	
+class QuestionResultsViewTests(TestCase):
+    def test_future_question(self):
+        future_question = create_question(q_txt='Future question.', days=5)
+        url = reverse('polls:results', args=(future_question.id,))
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+
+    def test_past_question(self):
+        past_question = create_question(q_txt='Past question.', days=-5)
+        url = reverse('polls:results', args=(past_question.id,))
+        response = self.client.get(url)
+        self.assertContains(response, past_question.q_txt)
+```
