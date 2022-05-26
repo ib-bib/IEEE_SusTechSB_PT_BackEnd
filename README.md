@@ -508,7 +508,7 @@ class Table_Name(models.Model):
 ```
 *It's good practice to keep the table name and the outer class name the same*
 
-We then run the ```makemigrations``` and ```migrate``` commands respectively in our terminal. This creates the database, and we'll be able to see it on phpMyAdmin. In my case, I made a database called "django_c", and a table with the same title. So my database looks like this
+We then run the ```makemigrations``` and ```migrate``` commands respectively in our terminal. This creates the table in our database, in addition to other auto-generated tables by Django. We can now head to phpMyAdmin and see the results. In my case, I made a database called "django_c", and a table with the same title. So my database looks like this
 
 ![database](https://user-images.githubusercontent.com/81387641/170403683-0c79e77b-e9c6-43f6-817b-864001a08534.png)
 
