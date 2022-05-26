@@ -425,7 +425,7 @@ Destroying test database for alias 'default'...
 You'll notice that a temporary database is created at the start, and destroyed at the bottom. 
 This is to carry out any tests that require dealing with databases, and avoid cluttering your actual database with just testing data. 
 You can see how this is a lot more efficient than dealing with the shell to interact with your database and test out your code manually.
-The tutorial had two suggestions for tests to write yourself, and I made an attempt at both of them. I hope I've done them correctly, but if not, I will definitely find out along the way towards the end of the tutorial.
+The tutorial had two suggestions for tests to write yourself, and I made an attempt at both of them. I hope I've done them correctly, but if not, I will hopefully find out along the way towards the end of the tutorial.
 ```python
 class QuestionModelTests(TestCase):
     def test_was_published_with_choice(self):
@@ -451,3 +451,65 @@ class QuestionResultsViewTests(TestCase):
         response = self.client.get(url)
         self.assertContains(response, past_question.q_txt)
 ```
+
+## Week Eight - Static Files and connecting to a MySQL database
+Starting off with what we mean by "static files". We mean all files that are involved in the front-end presentation of your HTML; your stylesheets, your javascript, your images and fonts. 
+Much like with templates, we create a directory labelled 'static' which Django will automatically identify as a location for static files. This directory ought to be located within your application folder, not just the general project directory. Moreover, just like with templates, it is good etiquette to create a subdirectory labelled with your application's name.
+Say in our tutorial, we have the "poll" application. Our static files should be located within ```polls/static/polls/```, which would mean a styelsheet named 'style.css' would be at ```polls/static/polls/style.css```.
+As even better etiquette, we can create more subdirectories to keep our stylesheets, images, fonts and javascript in separate folders. So something like ```polls/static/polls/css/style.css``` can make things more organized.
+If we then wanted to link this stylesheet in a template, the tag would look something like this
+```HTML
+{% load static %}
+<link rel="stylesheet" type="text/css" href="{% static 'polls/css/style.css' %}" />
+```
+If we wanted to reference a static file from within another static file though, we can't use the ```{% static %}```. Instead, we have to reference it using relative paths. For example, if we wanted to set the background image as our template's background using css, it would look like this
+```CSS
+body {
+	background: url(images/background.jpg);
+}
+```
+
+Onto connecting to a MySQL database; I used XAMPP to run an Apache server to host the database, and phpMyAdmin as the interface.
+First things first, we create our database
+
+![createDB](https://user-images.githubusercontent.com/81387641/170399389-3dcb848e-3b43-44df-ba0b-9984e89a0e47.png)
+
+Second thing to check off our list is to install two necessary packages to interact between mysql and python code, so we run
+```bash
+pip install mysql
+pip install mysql_connector
+```
+
+We then adjust our ```settings.py``` file to use the MySQL engine, as Django uses the SQLite engine by default.
+### settings.py
+```python
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'database_name',
+        'USER': 'user',
+        'PASSWORD': 'password',
+        'HOST': 'host',
+        'PORT': '3306',
+	# default port for MySQL
+        'OPTIONS': {
+            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'"
+        }
+    }
+}
+```
+Now, we can create our table(s) using our ```models.py``` file. We make a class for the table, and write an inner-class labelled 'Meta' to title the table.
+### models.py
+```python
+class Table_Name(models.Model):
+    name = models.CharField(max_length=100, null=True)
+    class Meta:
+        db_table = 'table_name'
+```
+*It's good practice to keep the table name and the outer class name the same*
+
+We then run the ```makemigrations``` and ```migrate``` commands respectively in our terminal. This creates the database, and we'll be able to see it on phpMyAdmin. In my case, I made a database called "django_c", and a table with the same title. So my database looks like this
+
+![database](https://user-images.githubusercontent.com/81387641/170403683-0c79e77b-e9c6-43f6-817b-864001a08534.png)
+
+If we see this, then we can celebrate. We have just successfully connected our Django back-end to a MySQL database.
